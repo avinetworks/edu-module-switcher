@@ -1,0 +1,85 @@
+---
+- hosts: localhost
+  gather_facts: false
+
+  vars:
+    avi_creds:
+      controller: 172.20.10.130
+      username: admin
+      password: VMware1!
+      api_version: 18.2.6
+
+  tasks:
+  - name: Pool creation
+    avi_pool:
+      avi_credentials: "{{ avi_creds }}"
+      default_server_port: "{{ item.port }}"
+      servers:
+        - hostname: sa-server-02
+          ip:
+            type: V4
+            addr: 172.20.130.102
+      health_monitor_refs:
+        - /api/healthmonitor/?name=System-HTTP
+      cloud_ref: '/api/cloud/?name=Default-Cloud'
+      name: "{{ item.name }}"
+    loop:
+    - { name: 'dvwa-pool', port: 30001 }
+    - { name: 'hackazon-pool', port: 30080 }
+    - { name: 'juice-pool', port: 30000 }
+    - { name: 'metrics-pool', port: 30003 }
+
+  - name: VIP creation
+    avi_vsvip:
+      avi_credentials: "{{ avi_creds }}"
+      name: "{{ item.name }}-vsvip"
+      dns_info:
+        - type: DNS_RECORD_A
+          fqdn: "{{ item.name }}.sa.vclass.local"
+      cloud_ref: '/api/cloud/?name=Default-Cloud'
+      vip:
+        - auto_allocate_ip: true
+          vip_id: '1'
+          avi_allocated_fip: false
+          discovered_networks:
+            - network_ref: '/api/network/?name=pg-SA-VIP'
+              subnet:
+                - mask: 24
+                  ip_addr:
+                     type: V4
+                     addr: 172.20.120.0
+          ipam_network_subnet:
+             subnet:
+                mask: 24
+                ip_addr:
+                   type: V4
+                   addr: 172.20.120.0
+          auto_allocate_floating_ip: false
+          avi_allocated_vip: false
+          auto_allocate_ip_type: V4_ONLY
+    loop:
+    - { name: 'dvwa' }
+    - { name: 'hackazon' }
+    - { name: 'juice' }
+    - { name: 'metrics' }
+    
+  - name: Virtualservice creation
+    avi_virtualservice:
+      avi_credentials: "{{ avi_creds }}"
+      network_profile_ref: '/api/networkprofile/?name=System-TCP-Proxy'
+      analytics_profile_ref: '/api/analyticsprofile/?name=System-Analytics-Profile'
+      cloud_ref: '/api/cloud/?name=Default-Cloud'
+      se_group_ref: '/api/serviceenginegroup/?name=Default-Group'
+      vsvip_ref: "/api/vsvip/?name={{ item.name }}-vsvip"
+      application_profile_ref: '/api/applicationprofile/?name=System-HTTP'
+      services:
+        - enable_ssl: false
+          port_range_end: 80
+          port: 80
+      pool_ref: "/api/pool/?name={{ item.name }}-pool"
+      name: "{{ item.name }}"
+    loop:
+    - { name: 'dvwa' }
+    - { name: 'hackazon' }
+    - { name: 'juice' }
+    - { name: 'metrics' }
