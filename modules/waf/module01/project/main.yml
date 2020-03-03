@@ -27,7 +27,7 @@
     - { name: 'dvwa-pool', port: 30001 }
     - { name: 'hackazon-pool', port: 30080 }
     - { name: 'juice-pool', port: 30000 }
-    - { name: 'metrics-pool', port: 30003 }
+    #- { name: 'metrics-pool', port: 30003 }
 
   - name: VIP creation
     avi_vsvip:
@@ -61,7 +61,7 @@
     - { name: 'dvwa' }
     - { name: 'hackazon' }
     - { name: 'juice' }
-    - { name: 'metrics' }
+    #- { name: 'metrics' }
     
   - name: Virtualservice creation
     avi_virtualservice:
@@ -90,4 +90,4 @@
     - { name: 'dvwa' }
     - { name: 'hackazon' }
     - { name: 'juice' }
-    - { name: 'metrics' }
+    #- { name: 'metrics' }
