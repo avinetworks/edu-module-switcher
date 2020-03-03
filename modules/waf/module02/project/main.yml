@@ -1,0 +1,43 @@
+---
+- hosts: localhost
+  gather_facts: false
+  tasks:
+    - add_host:
+        hostname: SA-AVITOOLS-01
+
+- hosts: SA-AVITOOLS-01
+  gather_facts: false
+  connection: ssh
+  vars:
+    ansible_ssh_pass: VMware1!
+    ansible_user: aviadmin
+  become: yes
+  tasks:
+    - name: Install openssh into module switcher
+      apt:
+        name:
+          - openssh-client
+          - sshpass
+        update_cache: yes
+        state: present
+      delegate_to: localhost
+    - name: Modify permissions for start.sh
+      file:
+        path: waf-automation-lab/start.sh
+        mode: '0755'
+      delegate_to: localhost
+    - name: Create ssh directory
+      file:
+        path: ~/.ssh
+        state: directory
+      delegate_to: localhost
+    - name: Add host to known_hosts file
+      local_action: "shell ssh-keyscan -t rsa SA-AVITOOLS-01 >> ~/.ssh/known_hosts"
+      delegate_to: localhost
+    - command: docker build -t jupyter:jupyter-lab /opt/avi/modules/module02/project/
+    - command: docker run -td -w /avi -v /opt/avi/modules/module02/project/waf-automation-lab:/avi --dns=172.20.10.10 --name=jupyter --hostname=jupyter -p 6789:6789 -d jupyter:jupyter-lab
+    - shell: docker ps -a | grep jupyter
+      register: container_check
+    - debug:
+        msg: "jupyter container found"
+      when: "'jupyter' in container_check.stdout"
