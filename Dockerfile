@@ -8,6 +8,6 @@ RUN mkdir /opt/modules
 COPY modules /opt/modules
 EXPOSE 5000
 RUN echo '#!/bin/bash' > /opt/falcon_runner/gunicorn.sh
-RUN echo 'gunicorn app:api -b 0.0.0.0:5000 --timeout 300 --chdir /opt/falcon_runner' >> /opt/falcon_runner/gunicorn.sh
+RUN echo 'gunicorn app:api -b 0.0.0.0:5000 --timeout 1800 --chdir /opt/falcon_runner' >> /opt/falcon_runner/gunicorn.sh
 RUN chmod a+x /opt/falcon_runner/gunicorn.sh
 CMD ["/opt/falcon_runner/gunicorn.sh"]
