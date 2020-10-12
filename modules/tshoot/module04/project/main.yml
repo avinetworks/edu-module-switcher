@@ -29,7 +29,7 @@
     include_role:
       name: avinetworks.aviconfig
     vars:
-      object_state: absent
+      avi_config_state: absent
       avi_config_file: "{{ module_name }}.yml"
     loop: "{{ module_names }}"
     loop_control:
@@ -48,7 +48,7 @@
     include_role:
       name: avinetworks.aviconfig
     vars:
-      avi_config_file: "{{ module_name }}"
+      avi_config_file: "{{ module_name }}.yml"
     loop: "{{ module_names }}"
     loop_control:
       loop_var: module_name
