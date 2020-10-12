@@ -70,13 +70,6 @@ avi_config:
                   auto_allocate_ip_type: V4_ONLY
           vrf_context_ref: '/api/vrfcontext/?name=global'
           name: vsvip-module04-01-Default-Cloud
-  tenant:
-      - 
-          name: module04-01
-          config_settings:
-              se_in_provider_context: true
-              tenant_access_to_provider_se: true
-              tenant_vrf: false
   sslprofile:
       - 
           state: "{{ object_state | default(omit) }}"
