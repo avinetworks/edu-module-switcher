@@ -1,0 +1,49 @@
+---
+- avi_applicationprofile:
+    avi_credentials: "{{ avi_credentials }}"
+    state: "{{ object_state | default(omit) }}"
+    type: APPLICATION_PROFILE_TYPE_HTTP
+    tenant_ref: /api/tenant/?name=module04-06
+    tenant: module04-06
+    http_profile:
+        xff_enabled: true
+        http_to_https: false
+        client_max_header_size: 10
+        client_max_request_size: 10
+        allow_dots_in_header_name: false
+        xff_alternate_name: X-Forwarded-For
+    dos_rl_profile:
+      rl_profile:
+          client_ip_requests_rate_limit:
+              rate_limiter:
+                count: 2
+                period: 10
+              action:
+                  status_code: HTTP_LOCAL_RESPONSE_STATUS_CODE_429
+                  type: RL_ACTION_CLOSE_CONN
+    name: module04-06-app_profile
+  when: avi_credentials.api_version is version('18.2.9', '>=')
+- avi_applicationprofile:
+    avi_credentials: "{{ avi_credentials }}"
+    state: "{{ object_state | default(omit) }}"
+    type: APPLICATION_PROFILE_TYPE_HTTP
+    tenant_ref: /api/tenant/?name=module04-06
+    tenant: module04-06
+    http_profile:
+        xff_enabled: true
+        http_to_https: false
+        client_max_header_size: 10
+        client_max_request_size: 10
+        allow_dots_in_header_name: false
+        xff_alternate_name: X-Forwarded-For
+    dos_rl_profile:
+      rl_profile:
+          client_ip_requests_rate_limit:
+              count: 2
+              explicit_tracking: false
+              period: 10
+              action:
+                  status_code: HTTP_LOCAL_RESPONSE_STATUS_CODE_429
+                  type: RL_ACTION_CLOSE_CONN
+    name: module04-06-app_profile
+  when: avi_credentials.api_version is version('18.2.9', '<')

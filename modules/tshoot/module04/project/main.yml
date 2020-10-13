@@ -5,44 +5,51 @@
   vars_files:
   - ../vars/shared_vars.yml
   tasks:
+  - name: Obtain Version of Controller
+    avi_api_version:
+      avi_credentials: "{{ avi_credentials }}"
+    register: avi_version
+  - set_fact:
+      avi_credentials: "{{ avi_credentials | combine ({'api_version': avi_version['obj']['version']}) }}"
+  - name: Collect Version Related Tasks
+    command: "ls version_checks"
+    register: ver_dir
+  - avi_tenant:
+      avi_credentials: "{{ avi_credentials }}"
+      name: "{{ tenant_name }}"
+      config_settings:
+          se_in_provider_context: true
+          tenant_access_to_provider_se: true
+          tenant_vrf: false
+    loop: "{{ module_names }}"
+    loop_control:
+      loop_var: tenant_name
+    name: Create or Update Tenants
   - name: Cleanup
     include_role:
       name: avinetworks.aviconfig
     vars:
-      object_state: absent
+      avi_config_state: absent
       avi_config_file: "{{ module_name }}.yml"
-    loop:
-      - "module04-01"
-      - "module04-02"
-      - "module04-03"
-      - "module04-04"
-      - "module04-05"
-      - "module04-06"
-      - "module04-07"
-      - "module04-08"
-      - "module04-09"
-      - "module04-10"
-      - "module04-11"
-      - "module04-12"
+    loop: "{{ module_names }}"
     loop_control:
       loop_var: module_name
+  - name: Run Version Related Tasks
+    vars:
+      object_state: absent
+    include: "{{ 'version_checks/' + item }}"
+    with_items: "{{ ver_dir.stdout_lines }}"
+    when: ver_dir
+  - name: Run Version Related Tasks
+    include: "{{ 'version_checks/' + item }}"
+    with_items: "{{ ver_dir.stdout_lines }}"
+    when: ver_dir
   - name: Setup module04
     include_role:
       name: avinetworks.aviconfig
     vars:
-      avi_config_file: "{{ module_name }}"
-    loop:
-      - "module04-01.yml"
-      - "module04-02.yml"
-      - "module04-03.yml"
-      - "module04-04.yml"
-      - "module04-05.yml"
-      - "module04-06.yml"
-      - "module04-07.yml"
-      - "module04-08.yml"
-      - "module04-09.yml"
-      - "module04-10.yml"
-      - "module04-11.yml"
+      avi_config_file: "{{ module_name }}.yml"
+    loop: "{{ module_names }}"
     loop_control:
       loop_var: module_name
   - name: Current VS Count

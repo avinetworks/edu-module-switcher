@@ -70,36 +70,6 @@ avi_config:
                   auto_allocate_ip_type: V4_ONLY
           vrf_context_ref: '/api/vrfcontext/?name=global'
           name: vsvip-module04-06-Default-Cloud
-  tenant:
-      - 
-          name: module04-06
-          config_settings:
-              se_in_provider_context: true
-              tenant_access_to_provider_se: true
-              tenant_vrf: false
-  applicationprofile:
-      -
-        state: "{{ object_state | default(omit) }}"
-        type: APPLICATION_PROFILE_TYPE_HTTP
-        tenant_ref: /api/tenant/?name=module04-06
-        tenant: module04-06
-        http_profile:
-            xff_enabled: true
-            http_to_https: false
-            client_max_header_size: 10
-            client_max_request_size: 10
-            allow_dots_in_header_name: false
-            xff_alternate_name: X-Forwarded-For
-        dos_rl_profile:
-          rl_profile:
-              client_ip_requests_rate_limit:
-                  count: 2
-                  explicit_tracking: false
-                  period: 10
-                  action:
-                      status_code: HTTP_LOCAL_RESPONSE_STATUS_CODE_429
-                      type: RL_ACTION_CLOSE_CONN
-        name: module04-06-app_profile
   virtualservice:
       - 
           state: "{{ object_state | default(omit) }}"
