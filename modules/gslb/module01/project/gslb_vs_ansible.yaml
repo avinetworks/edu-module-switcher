@@ -1,0 +1,111 @@
+- hosts: localhost
+  connection: local
+  gather_facts: false
+
+  roles:
+    - role: avinetworks.avisdk
+
+  vars:
+    avi_credentials:
+      username: admin
+      password: VMware1!
+      api_version: 18.2.6
+
+  tasks:
+    - name: Collect Virtual Services UUID on Sites
+      avi_api_session:
+        avi_credentials: "{{ avi_credentials }}"
+        controller: "{{ item.controller }}"
+        http_method: get
+        path: virtualservice
+        params:
+          name: "{{ item.vs_name }}"
+      register: vs_var
+      loop:
+        - controller: 172.20.10.130
+          vs_name: secure-avinetworks
+        - controller: 172.20.110.130
+          vs_name: avinetworks
+
+    - debug: var=vs_var.results[0].obj.results[0].uuid
+    - debug: var=vs_var.results[1].obj.results[0].uuid
+    - debug: var=vs_var.results[0].obj.results[0].vip[0].ip_address.addr
+    - debug: var=vs_var.results[1].obj.results[0].vip[0].ip_address.addr
+
+    - name: Collect Sites Cluster UUID
+      avi_api_session:
+        avi_credentials: "{{ avi_credentials }}"
+        controller: "{{ item.controller }}"
+        http_method: get
+        path: cluster
+      register: cluster_var
+      loop:
+        - controller: 172.20.10.130
+        - controller: 172.20.110.130
+
+    - debug: var=cluster_var.results[0].obj.uuid
+    - debug: var=cluster_var.results[1].obj.uuid
+
+    - name: Example to create GslbService object
+      avi_gslbservice:
+        avi_credentials: "{{ avi_credentials }}"
+        controller: 172.20.10.130
+        name: ansible-avinetworks
+        resolve_cname: false
+        controller_health_status_enabled: true
+        wildcard_match: false
+        tenant_ref: https://sa-avicon-01.vclass.local/api/tenant/admin
+        down_response:
+          type: GSLB_SERVICE_DOWN_RESPONSE_NONE
+        enabled: true
+        is_federated: true
+        domain_names:
+        - ansible-avinetworks.gslb.vclass.local
+        health_monitor_refs:
+        - https://sa-avicon-01.vclass.local/api/healthmonitor?name=System-GSLB-HTTPS
+        use_edns_client_subnet: true
+        groups:
+        - priority: 20
+          members:
+          - ratio: 1
+            ip:
+              type: V4
+              addr: "{{ vs_var.results[0].obj.results[0].vip[0].ip_address.addr }}"
+            enabled: true
+            public_ip:
+              ip:
+                type: V4
+                addr: 200.200.200.200
+            vs_uuid: "{{ vs_var.results[0].obj.results[0].uuid }}"
+            location:
+              source: GSLB_LOCATION_SRC_INHERIT_FROM_SITE
+            cluster_uuid: "{{ cluster_var.results[0].obj.uuid }}"
+          - ratio: 1
+            ip:
+            fqdn: secure-avinetworks.sb.vclass.local
+            enabled: true
+            location:
+              source: GSLB_LOCATION_SRC_FROM_GEODB
+          enabled: true
+          name: avinetworks_secure_gslb_pool
+          algorithm: GSLB_ALGORITHM_GEO
+        - priority: 30
+          members:
+          - ratio: 1
+            ip:
+            fqdn: avinetworks.sa.vclass.local
+            enabled: true
+          - cluster_uuid: "{{ cluster_var.results[0].obj.uuid }}"
+            ip:
+              type: V4
+              addr: "{{ vs_var.results[1].obj.results[0].vip[0].ip_address.addr }}"
+            vs_uuid: "{{ vs_var.results[1].obj.results[0].uuid }}"
+            ratio: 1
+            enabled: true
+          enabled: true
+          name: avinetworks_gslb_pool
+          algorithm: GSLB_ALGORITHM_ROUND_ROBIN
+        site_persistence_enabled: false
+        min_members: 0
+        health_monitor_scope: GSLB_SERVICE_HEALTH_MONITOR_ALL_MEMBERS
+        pool_algorithm: GSLB_SERVICE_ALGORITHM_GEO
