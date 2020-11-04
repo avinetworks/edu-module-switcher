@@ -10,7 +10,7 @@
     avi_credentials:
       username: admin
       password: VMware1!
-      api_version: 18.2.6
+      api_version: 18.2.10
 
   tasks:
     - name: Collect Virtual Services UUID on Sites
@@ -73,10 +73,10 @@
               type: V4
               addr: "{{ vs_var.results[0].obj.results[0].vip[0].ip_address.addr }}"
             enabled: true
-            public_ip:
-              ip:
-                type: V4
-                addr: 200.200.200.200
+            #public_ip:
+              #ip:
+                #type: V4
+                #addr: 200.200.200.200
             vs_uuid: "{{ vs_var.results[0].obj.results[0].uuid }}"
             location:
               source: GSLB_LOCATION_SRC_INHERIT_FROM_SITE
